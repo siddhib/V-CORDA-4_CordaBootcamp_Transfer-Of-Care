@@ -38,7 +38,7 @@ class EHRContract: Contract {
             val outputState = tx.outputStates.get(0) as EHRState
             "Request should be signed by the hospital and municipal council" using (command.signers.containsAll(listOf(outputState.hospital.owningKey,outputState.municipalCouncil.owningKey)))
             "Command should be of type Discharge" using (command.value is Commands.Discharge)
-            "Discharge documents should be attached" using (tx.attachments.size == 1)
+            "Discharge documents should be attached" using (tx.attachments.size == 2)
             val inputState = tx.inputStates.get(0) as EHRState
             "Patient needs to be admitted before discharging" using (inputState.careStatus == "ADMITTED")
         }
