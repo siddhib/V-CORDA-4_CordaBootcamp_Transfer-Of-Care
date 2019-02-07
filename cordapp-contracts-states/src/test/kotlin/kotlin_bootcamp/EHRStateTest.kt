@@ -13,13 +13,11 @@ class EHRStateTests{
 
     @Test
     fun ehrStateHasFieldsOfCorrectTypeInConstructor() {
-        //TokenState(alice, bob, 1)
         EHRState(municipalCouncil,hospitalA,null,"testid","testevent","ADMITTED", listOf(hospitalA,municipalCouncil))
 
     }
 
     @Test
-    //fun tokenStateHasGettersForIssuerOwnerAndAmount() {
     fun ehrStateHasGettersFor() {
         var ehrState = EHRState(municipalCouncil,hospitalA,null,"testid","testevent","ADMITTED", listOf(hospitalA,municipalCouncil))
         assertEquals(hospitalA, ehrState.hospital)

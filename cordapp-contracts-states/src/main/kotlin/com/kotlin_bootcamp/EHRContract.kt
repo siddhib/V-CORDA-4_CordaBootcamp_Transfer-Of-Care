@@ -78,7 +78,7 @@ class EHRContract: Contract {
             "Command should be of type Admission" using (command.value is Commands.Admission)
             if(tx.inputStates.isNotEmpty()){
                 val inputState = tx.inputStates.get(0) as EHRState
-                "Transfer of Care should be approved" using (inputState.careStatus == "TRANSFER OF CARE APPROVED")
+                "Patient cannot be admitted" using (inputState.careStatus == "DISCHARGED" || inputState.careStatus == "TRANSFER OF CARE APPROVED")
             }
         }
     }

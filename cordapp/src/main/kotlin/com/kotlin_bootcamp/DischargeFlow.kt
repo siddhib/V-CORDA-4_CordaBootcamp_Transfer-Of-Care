@@ -16,7 +16,7 @@ import net.corda.core.utilities.ProgressTracker
 @StartableByRPC
 class DischargeFlow(val municipalCouncil: Party,
                     val ehrID: String,
-                    val attachId: SecureHash.SHA256): FlowLogic<SignedTransaction>() {
+                    val attachId: SecureHash): FlowLogic<SignedTransaction>() {
 
     override val progressTracker: ProgressTracker? = ProgressTracker()
 
