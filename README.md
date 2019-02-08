@@ -31,33 +31,47 @@ http://localhost:10010/api/hospital/admit?ehrID=abc&partyName=Municipal Council
 ```
 
 **Step 2: Add medical event on Hospital A node**
+```
 PUT request
 http://localhost:10010/api/hospital/addEvent?ehrID=abc&partyName=Municipal Council&medicalEvent=Alloted Bed
+```
 
 **Step 3: Initiate TOC request on Hospital A node**
+```
 PUT Request
 http://localhost:10010/api/hospital/initiateTOC?partyName=Municipal Council&toHospital=Hospital B&ehrID=abc
+```
 
 **Step 4: Approve TOC on Municipal Council node**
+```
 PUT Request
 http://localhost:10012/api/muncipal/reviewTOC?ehrID=abc&status=Approve
+```
 
 OR
 
 **Step 4: Reject TOC on Municipal Council node**
+```
 PUT Request
 http://localhost:10012/api/muncipal/reviewTOC?ehrID=abc&status=Reject
+```
 In this case, Repeat step 3
 
 **Step 5: Check if hospital B has access to patient details and Hospital A should not have access**
+```
 GET Request
 http://localhost:10010/api/hospital/states
+```
 
 **Step 6: Admit patient to hospital B**
+```
 PUT Request
 http://localhost:10011/api/hospital/admit?ehrID=abc&partyName=Municipal Council
+```
 
 **Step 7:Discharge from hospital B**
+```
 PUT Request
 http://localhost:10011/api/hospital/discharge?dischargeDocument=C:\discharge2.zip&ehrID=abc&partyName=Municipal Council
+```
 
