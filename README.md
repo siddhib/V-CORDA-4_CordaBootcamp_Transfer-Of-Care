@@ -20,35 +20,42 @@ At this point you will have a notary node running as well as three other nodes a
 
 # Testing this solution using Rest apis
 
-Hospital A: http://localhost:10010
-Hospital B: http://localhost:10011
-Municipal Council: http://localhost:10012
+1. Hospital A: http://localhost:10010
+2. Hospital B: http://localhost:10011
+3. Municipal Council: http://localhost:10012
 
-Step 1: Admission flow On Hospital 1
+**Step 1: Admission flow on Hospital A node**
 PUT request
 http://localhost:10010/api/hospital/admit?ehrID=abc&partyName=Municipal Council
 
-Step 2: Add event
+**Step 2: Add medical event on Hospital A node**
 PUT request
 http://localhost:10010/api/hospital/addEvent?ehrID=abc&partyName=Municipal Council&medicalEvent=Alloted Bed
 
-Step 3: Initiate TOC hospital states
+**Step 3: Initiate TOC request on Hospital A node**
 PUT Request
 http://localhost:10010/api/hospital/initiateTOC?partyName=Municipal Council&toHospital=Hospital B&ehrID=abc
 
-Step 4: Approve TOC
+**Step 4: Approve TOC on Municipal Council node**
 PUT Request
 http://localhost:10012/api/muncipal/reviewTOC?ehrID=abc&status=Approve
 
-Step 5: Check if hospital B has access to patient details and Hospital A should not have access
+OR
+
+**Step 4: Reject TOC on Municipal Council node**
+PUT Request
+http://localhost:10012/api/muncipal/reviewTOC?ehrID=abc&status=Reject
+In this case, Repeat step 3
+
+**Step 5: Check if hospital B has access to patient details and Hospital A should not have access**
 GET Request
 http://localhost:10010/api/hospital/states
 
-Step 6: Admit patient to hospital B
+**Step 6: Admit patient to hospital B**
 PUT Request
 http://localhost:10011/api/hospital/admit?ehrID=abc&partyName=Municipal Council
 
-Step 7:Discharge from hospital B
+**Step 7:Discharge from hospital B**
 PUT Request
 http://localhost:10011/api/hospital/discharge?dischargeDocument=C:\discharge2.zip&ehrID=abc&partyName=Municipal Council
 
