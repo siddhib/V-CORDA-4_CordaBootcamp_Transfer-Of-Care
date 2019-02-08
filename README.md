@@ -1,19 +1,54 @@
-# Bootcamp CorDapp
-This project is the template we will use as a basis for developing a complete CorDapp during the bootcamp. Our CorDapp will allow the issuance of tokens onto the ledger.
+# Transfer of Care CorDapp
+Implement a CorDapp to digitize transfer of care for a person between medical and social organizations.
+A medical record is maintained at the Municipal council for all citizens. A hospital will gain access to this record while a patient is under its care and can add additional info to it.
+The Municipal council always has the latest copy of all the records.
 
-We'll develop the CorDapp using a test-driven approach. At each stage, you'll know your CorDapp is working once the defined tests pass.
+Once a hospital is done treating the patient, they can discharge her.
+In case the patient needs further care, the hospital raises a ‘Transfer of care’ request with the Municipal Council which can review and approve\reject it.
+In case of acceptance the status on the EHR should change accordingly to reflect the transfer of care and hospital should not be able to see or modify the EHR.
+
 
 ## Set up
 
-1. Download and install Oracle JDK 8 JVM (minimum supported version 8u171)
-2. Download and install IntelliJ Community Edition (supported versions 2017.x and 2018.x)
-3. Download the `bootcamp-cordapp-kotlin` repository
-4. Open IntelliJ. From the splash screen, click `Import Project`, select the `bootcamp-cordapp-kotlin` folder and click `Open`
-5. Select `Import project from external model > Gradle > Next > Finish`
-  (Gradle will now download all the project dependencies and perform some indexing. This usually takes a minute or so)
-6. Click `File > Project Structure…` and select the Project SDK (Oracle JDK 8, 8u171+)
+1. `git clone https://github.com/siddhib/V-CORDA-4_CordaBootcamp_Transfer-Of-Care`
+2. cd V-CORDA-4_CordaBootcamp_Transfer-Of-Care
+3. ./gradlew deployNodes - building may take upto a minute (it's much quicker if you already have the Corda binaries)./r
+4. cd build/nodes
+5. ./runnodes
 
-    i. Add a new SDK if required by clicking `New…` and selecting the JDK’s folder
+At this point you will have a notary node running as well as three other nodes and their corresponding webservers. There should be 7 console windows in total. One for the notary and two for each of the three nodes. The nodes take about 20-30 seconds to finish booting up.
 
-7. Open the `Project` view by clicking `View > Tool Windows > Project`
-8. You can now start implementing!
+# Testing this solution using Rest apis
+
+Hospital A: http://localhost:10010
+Hospital B: http://localhost:10011
+Municipal Council: http://localhost:10012
+
+Step 1: Admission flow On Hospital 1
+PUT request
+http://localhost:10010/api/hospital/admit?ehrID=abc&partyName=Municipal Council
+
+Step 2: Add event
+PUT request
+http://localhost:10010/api/hospital/addEvent?ehrID=abc&partyName=Municipal Council&medicalEvent=Alloted Bed
+
+Step 3: Initiate TOC hospital states
+PUT Request
+http://localhost:10010/api/hospital/initiateTOC?partyName=Municipal Council&toHospital=Hospital B&ehrID=abc
+
+Step 4: Approve TOC
+PUT Request
+http://localhost:10012/api/muncipal/reviewTOC?ehrID=abc&status=Approve
+
+Step 5: Check if hospital B has access to patient details and Hospital A should not have access
+GET Request
+http://localhost:10010/api/hospital/states
+
+Step 6: Admit patient to hospital B
+PUT Request
+http://localhost:10011/api/hospital/admit?ehrID=abc&partyName=Municipal Council
+
+Step 7:Discharge from hospital B
+PUT Request
+http://localhost:10011/api/hospital/discharge?dischargeDocument=C:\discharge2.zip&ehrID=abc&partyName=Municipal Council
+
