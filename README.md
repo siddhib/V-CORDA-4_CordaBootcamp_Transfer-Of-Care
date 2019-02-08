@@ -25,8 +25,10 @@ At this point you will have a notary node running as well as three other nodes a
 3. Municipal Council: http://localhost:10012
 
 **Step 1: Admission flow on Hospital A node**
-> PUT request
-`http://localhost:10010/api/hospital/admit?ehrID=abc&partyName=Municipal Council`
+PUT request
+```
+http://localhost:10010/api/hospital/admit?ehrID=abc&partyName=Municipal Council
+```
 
 **Step 2: Add medical event on Hospital A node**
 PUT request
