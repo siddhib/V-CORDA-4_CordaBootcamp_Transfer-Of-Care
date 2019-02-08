@@ -75,3 +75,8 @@ PUT Request
 http://localhost:10011/api/hospital/discharge?dischargeDocument=C:\discharge2.zip&ehrID=abc&partyName=Municipal Council
 ```
 
+**Retrieve EHR state using EHR id**
+```
+GET Request
+http://localhost:10012/api/hospital/state/byEhrId/<ehrid>
+```
