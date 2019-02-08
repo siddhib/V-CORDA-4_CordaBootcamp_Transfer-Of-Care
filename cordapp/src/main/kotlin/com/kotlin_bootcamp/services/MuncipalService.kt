@@ -26,14 +26,14 @@ class MuncipalService(val rpcOps: CordaRPCOps) {
 
     @PUT
     @Path("reviewTOC")
+    @Produces(MediaType.APPLICATION_JSON)
     fun reviewTOC(@QueryParam("ehrID") ehrID: String, @QueryParam("status") status: String): Response {
 
         return try {
 
             val signedTx = rpcOps.startFlow(::ReviewTOCFlow,ehrID, status ).returnValue.getOrThrow()
-            //  val signedTx = rpcOps.startTrackedFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
-            // val signedTx = rpcOps.startTrackedFlow(::Initiator, iouValue, otherParty).returnValue.getOrThrow()
-            Response.status(Response.Status.CREATED).entity("Transaction id ${signedTx.id} committed to ledger.\n").build()
+
+            Response.status(Response.Status.CREATED).entity("Transfer of care $status by municipal council. \n").build()
 
         } catch (ex: Throwable) {
             logger.error(ex.message, ex)

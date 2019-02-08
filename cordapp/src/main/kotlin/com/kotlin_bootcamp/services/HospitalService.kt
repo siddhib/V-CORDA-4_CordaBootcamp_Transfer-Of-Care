@@ -60,8 +60,8 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
         return try {
             val signedTx = rpcOps.startFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
-          //  val signedTx = rpcOps.startTrackedFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
-           // val signedTx = rpcOps.startTrackedFlow(::Initiator, iouValue, otherParty).returnValue.getOrThrow()
+
+
            Response.status(CREATED).entity("Patient with ehr  $ehrID admitted to hospital.\n").build()
 
         } catch (ex: Throwable) {
@@ -72,10 +72,9 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
     @PUT
     @Path("discharge")
-    fun dischargePatient(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: CordaX500Name , @QueryParam("dischargeDocument") dischargeDocument: String ): Response {
+    fun dischargePatient(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: String , @QueryParam("dischargeDocument") dischargeDocument: String ): Response {
 
-        val otherParty = rpcOps.wellKnownPartyFromX500Name(partyName) ?:
-        return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
+        val otherParty = rpcOps.partiesFromName(partyName, true).firstOrNull()?:return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
 
         if (dischargeDocument == null) {
             return Response.status(BAD_REQUEST).entity(" Discharge document is missing.\n").build()
@@ -94,12 +93,12 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
             logger.info("Discharge document uploaded with hash ${txHash}")
 
-            //rpcOps.startFlow(::DischargeFlow, otherParty,ehrID, txHash).returnValue.getOrThrow()
+
             val signedTx = rpcOps.startFlow(::DischargeFlow,otherParty,ehrID, txHash ).returnValue.getOrThrow()
 
-            Response.status(CREATED).entity("Discharge Transaction successful , transaction id ${signedTx.id} committed to ledger.\n").build()
+            Response.status(CREATED).entity("Discharge patient successful , transaction id ${signedTx.id}\n").build()
 
-            Response.status(CREATED).build()
+
         } catch (ex: Throwable) {
             logger.error("Error discharging patient ")
             logger.error(ex.message, ex)
@@ -110,20 +109,18 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
     @PUT
     @Path("addEvent")
-    fun addEvent(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: CordaX500Name,
+    fun addEvent(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: String,
                  @QueryParam("medicalEvent") medicalEvent: String ): Response {
 
-        val otherParty = rpcOps.wellKnownPartyFromX500Name(partyName) ?:
-        return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
+        val otherParty = rpcOps.partiesFromName(partyName, true).firstOrNull()?:return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
         if (medicalEvent == null) {
             return Response.status(BAD_REQUEST).entity(" Please add medical event\n").build()
         }
 
         return try {
             val signedTx = rpcOps.startFlow(::UpdateEHRFlow,otherParty,ehrID , medicalEvent).returnValue.getOrThrow()
-            //  val signedTx = rpcOps.startTrackedFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
-            // val signedTx = rpcOps.startTrackedFlow(::Initiator, iouValue, otherParty).returnValue.getOrThrow()
-            Response.status(CREATED).entity("Transaction id ${signedTx.id} committed to ledger.\n").build()
+
+            Response.status(CREATED).entity("Event successfully added. \n").build()
 
         } catch (ex: Throwable) {
             logger.error(ex.message, ex)
@@ -143,9 +140,8 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
         return try {
             val signedTx = rpcOps.startFlow(::RequestTOCFlow,otherParty, otherHospitalParty, ehrID ).returnValue.getOrThrow()
-            //  val signedTx = rpcOps.startTrackedFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
-            // val signedTx = rpcOps.startTrackedFlow(::Initiator, iouValue, otherParty).returnValue.getOrThrow()
-            Response.status(CREATED).entity("Transaction id ${signedTx.id} committed to ledger.\n").build()
+
+            Response.status(CREATED).entity("Transfer of care requested for patient with ehrId $ehrID.\n").build()
 
         } catch (ex: Throwable) {
             logger.error(ex.message, ex)
