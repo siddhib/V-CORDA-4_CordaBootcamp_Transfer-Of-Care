@@ -1,13 +1,6 @@
 package kotlin_bootcamp
 
-import com.google.common.base.Predicates.instanceOf
-import com.google.common.collect.ImmutableList
-import com.kotlin_bootcamp.AdmissionFlow
-import com.kotlin_bootcamp.EHRContract
-import com.kotlin_bootcamp.EHRSchemaV1
-import com.kotlin_bootcamp.EHRState
-import net.corda.core.contracts.TransactionVerificationException
-import net.corda.core.crypto.SecureHash
+import com.kotlin_bootcamp.*
 import net.corda.core.flows.FlowException
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
@@ -19,20 +12,16 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.internal.StartedNode
-import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.singleIdentity
-import net.corda.testing.node.MockNetwork
-import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.startFlow
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 
-class AdmissionFlowTest {
+class RequestTOCFlowTest {
+
     private lateinit var mockNet: InternalMockNetwork
     private lateinit var notaryNode: StartedNode<InternalMockNetwork.MockNode>
     private lateinit var hospitalANode: StartedNode<InternalMockNetwork.MockNode>
@@ -63,8 +52,10 @@ class AdmissionFlowTest {
     }
 
     @Test
-    fun `Transaction is Signed by hospitalA and municipalCouncil`(){
-        val flow= AdmissionFlow(municipalCouncil,"xyz")
+    fun `Transaction is Signed by hospitalA and hospitalB`(){
+        val dummyState = EHRState(municipalCouncil,hospitalA,null,"xyz","Admitted to Hospital A","ADMITTED", listOf(municipalCouncil,hospitalA))
+        val stx = makeTransactions(dummyState)
+        val flow= RequestTOCFlow(municipalCouncil,hospitalB,"xyz")
         val future=hospitalANode.services.startFlow(flow)
         mockNet.runNetwork()
         val signedTx=future.resultFuture.getOrThrow()
@@ -72,45 +63,44 @@ class AdmissionFlowTest {
     }
 
     @Test
-    fun `Transaction has zero input if the patient is new`(){
-        val flow= AdmissionFlow(municipalCouncil,"xyz")
-        val future=hospitalANode.services.startFlow(flow)
-        mockNet.runNetwork()
-        val signedTx=future.resultFuture.getOrThrow()
-        assert(signedTx.inputs.isEmpty())
-    }
-
-    @Test
-    fun `Transaction has one input if the patient is not new`(){
-        val dummyState = EHRState(municipalCouncil,hospitalA,null,"xyz","Admitted to Hospital A","DISCHARGED", listOf(municipalCouncil,hospitalA))
-        val stx = makeTransactions(dummyState)
-        val flow= AdmissionFlow(municipalCouncil,"xyz")
-        val future=hospitalANode.services.startFlow(flow)
-        mockNet.runNetwork()
-        val signedTx=future.resultFuture.getOrThrow()
-        assert(signedTx.inputs.isNotEmpty())
-    }
-
-    @Test
-    fun `A patient cannot be admitted twice to same hospital`(){
-        val dummyState = EHRState(municipalCouncil,hospitalA,null,"xyz","Admitted to Hospital A","ADMITTED", listOf(municipalCouncil,hospitalA))
-        val stx = makeTransactions(dummyState)
-        val flow= AdmissionFlow(municipalCouncil,"xyz")
+    fun `Fail if Patient with given ehrID does not exist in hospital`(){
+        val flow= RequestTOCFlow(municipalCouncil,hospitalB,"xyz")
         val future=hospitalANode.services.startFlow(flow)
         mockNet.runNetwork()
         assertFailsWith<FlowException> {future.resultFuture.getOrThrow()}
     }
 
     @Test
-    fun `Admitted patient cannot be admitted again to another hospital`(){
+    fun `TOC request should be stored in vault of municipalCouncil`(){
         val dummyState = EHRState(municipalCouncil,hospitalA,null,"xyz","Admitted to Hospital A","ADMITTED", listOf(municipalCouncil,hospitalA))
         val stx = makeTransactions(dummyState)
-        val flow= AdmissionFlow(municipalCouncil,"xyz")
-        val future=hospitalBNode.services.startFlow(flow)
+        val flow= RequestTOCFlow(municipalCouncil,hospitalB,"xyz")
+        val future=hospitalANode.services.startFlow(flow)
         mockNet.runNetwork()
-        assertFailsWith<FlowException> {future.resultFuture.getOrThrow()}
+
+        municipalCouncilNode.database.transaction {
+            val ccyIndex = builder { EHRSchemaV1.PersistentEHR::ehrId.equal("xyz") }
+            val criteria = QueryCriteria.VaultCustomQueryCriteria(ccyIndex)
+            val vaultQueryCriteria = municipalCouncilNode.services.vaultService.queryBy<EHRState>(criteria)
+            assert(vaultQueryCriteria.states.isNotEmpty())
+        }
     }
 
+    @Test
+    fun `EHR state should not be stored in vault of hospitalB`(){
+        val dummyState = EHRState(municipalCouncil,hospitalA,null,"xyz","Admitted to Hospital A","ADMITTED", listOf(municipalCouncil,hospitalA))
+        val stx = makeTransactions(dummyState)
+        val flow= RequestTOCFlow(municipalCouncil,hospitalB,"xyz")
+        val future=hospitalANode.services.startFlow(flow)
+        mockNet.runNetwork()
+
+        hospitalBNode.database.transaction {
+            val ccyIndex = builder { EHRSchemaV1.PersistentEHR::ehrId.equal("xyz") }
+            val criteria = QueryCriteria.VaultCustomQueryCriteria(ccyIndex)
+            val vaultQueryCriteria = hospitalBNode.services.vaultService.queryBy<EHRState>(criteria)
+            assert(vaultQueryCriteria.states.isEmpty())
+        }
+    }
 
     private fun makeTransactions(dummyState: EHRState): SignedTransaction {
         // Create a dummy transaction

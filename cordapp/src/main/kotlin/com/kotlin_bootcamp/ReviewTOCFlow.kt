@@ -29,9 +29,15 @@ class ReviewTOCFlow(val ehrID: String,
         val criteria = QueryCriteria.VaultCustomQueryCriteria(ccyIndex)
         val vaultQueryCriteria = serviceHub.vaultService.queryBy<EHRState>(criteria)
 
+        if(vaultQueryCriteria.states.isEmpty()){
+            throw FlowException("There is no TOC request for ehrID:"+ehrID)
+        }
+
         val inputState = vaultQueryCriteria.states.first()
+
         val oldHospital = inputState.state.data.hospital
         val newHospital = inputState.state.data.transferToHospital!!
+
         val outputState: EHRState
         //Update medical event
         var medEvents=inputState.state.data.medicalEvents

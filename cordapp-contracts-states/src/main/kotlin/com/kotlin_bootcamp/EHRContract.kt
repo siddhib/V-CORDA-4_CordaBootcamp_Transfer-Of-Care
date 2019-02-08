@@ -40,7 +40,8 @@ class EHRContract: Contract {
             "Command should be of type Discharge" using (command.value is Commands.Discharge)
             "Discharge documents should be attached" using (tx.attachments.size == 2)
             val inputState = tx.inputStates.get(0) as EHRState
-            "Patient needs to be admitted before discharging" using (inputState.careStatus == "ADMITTED")
+            "Patient needs to be admitted before discharging" using (inputState.careStatus == "ADMITTED" || inputState.careStatus == "TRANSFER OF CARE REJECTED")
+            "Output CareStatus should be DISCHARGED" using (outputState.careStatus == "DISCHARGED")
         }
 
     }
@@ -54,6 +55,7 @@ class EHRContract: Contract {
             "Command should be of type UpdateEHR" using (command.value is Commands.UpdateEHR)
             val inputState = tx.inputStates.get(0) as EHRState
             "Patient needs to be admitted before adding medical event details" using (inputState.careStatus == "ADMITTED")
+
         }
     }
 
@@ -63,9 +65,9 @@ class EHRContract: Contract {
             "Transaction should have one output" using (tx.outputs.size == 1)
             val inputState = tx.inputStates.get(0) as EHRState
             val outputState = tx.outputStates.get(0) as EHRState
-            "Request should be signed by both the hospital" using command.signers.containsAll(listOf(inputState.hospital.owningKey,outputState.hospital.owningKey))
+            "Request should be signed by both the hospital" using command.signers.containsAll(listOf(inputState.hospital.owningKey, outputState.transferToHospital!!.owningKey))
             "Command should be of type RequestTransferOfCare" using (command.value is Commands.RequestTransferOfCare)
-            "Patient is not admitted" using (inputState.careStatus == "ADMITTED" || inputState.careStatus == "TRANSFER OF CARE REJECTED")
+            "Transfer of care cannot be raised" using (inputState.careStatus == "ADMITTED" || inputState.careStatus == "TRANSFER OF CARE REJECTED")
         }
     }
 
@@ -79,6 +81,7 @@ class EHRContract: Contract {
             if(tx.inputStates.isNotEmpty()){
                 val inputState = tx.inputStates.get(0) as EHRState
                 "Patient cannot be admitted" using (inputState.careStatus == "DISCHARGED" || inputState.careStatus == "TRANSFER OF CARE APPROVED")
+                "TOC not requested by this hospital" using (inputState.hospital == outputState.hospital)
             }
         }
     }

@@ -20,6 +20,10 @@ class UpdateEHRFlow(val municipalCouncil: Party,
     @Suspendable
     override fun call(): SignedTransaction {
 
+        if(medicalEvent == ""){
+            throw FlowException("Medical event details cant be empty")
+        }
+
         // Get the notary
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
 

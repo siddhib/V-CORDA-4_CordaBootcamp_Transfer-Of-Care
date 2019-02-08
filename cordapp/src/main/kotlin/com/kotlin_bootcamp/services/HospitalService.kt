@@ -53,16 +53,16 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
     @PUT
     @Path("admit")
-    fun admitPatient(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: CordaX500Name ): Response {
+    fun admitPatient(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: String ): Response {
 
-        val otherParty = rpcOps.wellKnownPartyFromX500Name(partyName) ?:
-        return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
+        val otherParty = rpcOps.partiesFromName(partyName, true).firstOrNull()?:return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
+
 
         return try {
             val signedTx = rpcOps.startFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
           //  val signedTx = rpcOps.startTrackedFlow(::AdmissionFlow,otherParty,ehrID ).returnValue.getOrThrow()
            // val signedTx = rpcOps.startTrackedFlow(::Initiator, iouValue, otherParty).returnValue.getOrThrow()
-           Response.status(CREATED).entity("Transaction id ${signedTx.id} committed to ledger.\n").build()
+           Response.status(CREATED).entity("Patient with ehr  $ehrID admitted to hospital.\n").build()
 
         } catch (ex: Throwable) {
             logger.error(ex.message, ex)
@@ -101,6 +101,7 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
             Response.status(CREATED).build()
         } catch (ex: Throwable) {
+            logger.error("Error discharging patient ")
             logger.error(ex.message, ex)
             Response.status(BAD_REQUEST).entity(ex.message!!).build()
         }
@@ -132,14 +133,12 @@ class HospitalService(val rpcOps: CordaRPCOps) {
 
     @PUT
     @Path("initiateTOC")
-    fun initiateTOC(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: CordaX500Name,
-                 @QueryParam("toHospital: ") toHospital: CordaX500Name ): Response {
+    fun initiateTOC(@QueryParam("ehrID") ehrID: String, @QueryParam("partyName") partyName: String,
+                 @QueryParam("toHospital") toHospital: String ): Response {
 
-        val otherParty = rpcOps.wellKnownPartyFromX500Name(partyName) ?:
-        return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
+        val otherParty = rpcOps.partiesFromName(partyName, true).firstOrNull()?:return Response.status(BAD_REQUEST).entity("Party named $partyName cannot be found.\n").build()
 
-        val otherHospitalParty = rpcOps.wellKnownPartyFromX500Name(toHospital) ?:
-        return Response.status(BAD_REQUEST).entity("Party named $toHospital cannot be found.\n").build()
+        val otherHospitalParty = rpcOps.partiesFromName(toHospital, true).firstOrNull()?:return Response.status(BAD_REQUEST).entity("Party named $toHospital cannot be found.\n").build()
 
 
         return try {
