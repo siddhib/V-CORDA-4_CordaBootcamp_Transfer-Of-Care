@@ -1,16 +1,17 @@
 package com.kotlin_bootcamp.services
 
 import com.kotlin_bootcamp.*
-import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.sha256
-import net.corda.core.identity.CordaX500Name
+
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
-import net.corda.core.messaging.startTrackedFlow
+
+import net.corda.core.messaging.vaultQueryBy
+import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.loggerFor
+
 import javax.ws.rs.*
 
 
@@ -33,21 +34,22 @@ class HospitalService(val rpcOps: CordaRPCOps) {
     @GET
     @Path("states")
     @Produces(MediaType.APPLICATION_JSON)
-    fun hospitalStates() = rpcOps.vaultQuery(EHRState::class.java).states
+    fun states() = rpcOps.vaultQuery(EHRState::class.java).states
 
     @GET
-    @Path("state/{ehrId}")
+    @Path("state/byEhrId/{ehrID}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun hospitalStateByEhrId(@PathParam("ehrId") ehrID: String) {
+    fun stateByEhrId(@PathParam("ehrID") ehrID: String) : Response{
 
-//        val logicalExpression = builder { EHRSchema.::currency.equal(GBP.currencyCode) }
-//        val ehr = EHRSchema::ehrId.equal(ehrID)
-//
-//
-//        val customCriteria = QueryCriteria.VaultCustomQueryCriteria(ehr)
-//
-//        rpcOps.vaultQueryByCriteria(EHRState::class.java)
-        rpcOps.vaultQuery(EHRState::class.java).states
+        val generalCriteria = QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL)
+        val results = builder {
+            var ehrCriteria = EHRSchemaV1.PersistentEHR::ehrId.equal(ehrID)
+            val customCriteria = QueryCriteria.VaultCustomQueryCriteria(ehrCriteria)
+            val criteria = generalCriteria.and(customCriteria)
+            val results = rpcOps.vaultQueryBy<EHRState>(criteria).states
+            return Response.ok(results).build()
+        }
+
     }
 
 
